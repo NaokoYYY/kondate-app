@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>献立アプリ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">🍱 献立アプリ</div>
+    <div class="nav-links">
+      <a href="#" data-page="calendar" class="nav-link active">カレンダー</a>
+      <a href="#" data-page="recipes" class="nav-link">レシピ</a>
+      <a href="#" data-page="shopping" class="nav-link">買い物リスト</a>
+      <a href="#" data-page="ai" class="nav-link">AI提案</a>
+      <a href="#" data-page="settings" class="nav-link">設定</a>
+    </div>
+  </nav>
+
+  <main id="app">
+    <!-- Calendar Page -->
+    <div id="page-calendar" class="page active">
+      <div class="page-header">
+        <h1>今週の献立</h1>
+        <div class="week-nav">
+          <button id="prev-week" class="btn btn-outline">◀ 前の週</button>
+          <span id="week-label"></span>
+          <button id="next-week" class="btn btn-outline">次の週 ▶</button>
+        </div>
+      </div>
+      <div id="calendar-grid" class="calendar-grid"></div>
+      <div class="calorie-summary">
+        <h3>📊 今週のカロリー合計</h3>
+        <div id="weekly-calories" class="calorie-bars"></div>
+      </div>
+    </div>
+
+    <!-- Recipes Page -->
+    <div id="page-recipes" class="page">
+      <div class="page-header">
+        <h1>レシピ管理</h1>
+        <button id="add-recipe-btn" class="btn btn-primary">＋ レシピを追加</button>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="recipe-search" placeholder="🔍 レシピを検索..." class="search-input">
+        <select id="category-filter" class="select-input">
+          <option value="">すべてのカテゴリ</option>
+          <option value="朝食">朝食</option>
+          <option value="昼食">昼食</option>
+          <option value="夕食">夕食</option>
+          <option value="おやつ">おやつ</option>
+        </select>
+      </div>
+      <div id="recipe-list" class="recipe-grid"></div>
+    </div>
+
+    <!-- Shopping List Page -->
+    <div id="page-shopping" class="page">
+      <div class="page-header">
+        <h1>買い物リスト</h1>
+        <button id="generate-shopping" class="btn btn-primary">🛒 今週の献立から生成</button>
+      </div>
+      <div id="shopping-list" class="shopping-list"></div>
+      <div class="manual-add">
+        <h3>手動で追加</h3>
+        <div class="input-row">
+          <input type="text" id="manual-item" placeholder="食材名" class="text-input">
+          <input type="number" id="manual-qty" placeholder="数量" class="number-input">
+          <input type="text" id="manual-unit" placeholder="単位" class="unit-input">
+          <button id="add-manual-item" class="btn btn-secondary">追加</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Suggestion Page -->
+    <div id="page-ai" class="page">
+      <div class="page-header">
+        <h1>AI献立提案</h1>
+      </div>
+      <div class="ai-container">
+        <div class="ai-form">
+          <div class="form-group">
+            <label>人数</label>
+            <input type="number" id="ai-people" value="2" min="1" max="10" class="number-input">
+          </div>
+          <div class="form-group">
+            <label>予算（円/週）</label>
+            <input type="number" id="ai-budget" value="10000" step="1000" class="text-input">
+          </div>
+          <div class="form-group">
+            <label>好み・制限（例：和食中心、卵アレルギー）</label>
+            <input type="text" id="ai-preferences" placeholder="自由に入力" class="text-input">
+          </div>
+          <div class="form-group">
+            <label>目標カロリー（kcal/日）</label>
+            <input type="number" id="ai-calories" value="2000" step="100" class="text-input">
+          </div>
+          <button id="ai-suggest-btn" class="btn btn-primary btn-large">✨ AIに提案してもらう</button>
+        </div>
+        <div id="ai-result" class="ai-result hidden">
+          <div id="ai-loading" class="ai-loading hidden">
+            <div class="spinner"></div>
+            <p>AIが献立を考えています...</p>
+          </div>
+          <div id="ai-content"></div>
+          <button id="apply-ai-plan" class="btn btn-success hidden">📅 この献立をカレンダーに追加</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Page -->
+    <div id="page-settings" class="page">
+      <div class="page-header">
+        <h1>設定</h1>
+      </div>
+      <div class="settings-container">
+        <div class="settings-card">
+          <h3>🤖 Claude API設定</h3>
+          <div class="form-group">
+            <label>APIキー</label>
+            <input type="password" id="api-key-input" placeholder="sk-ant-..." class="text-input">
+            <small>Anthropic ConsoleからAPIキーを取得してください</small>
+          </div>
+          <button id="save-api-key" class="btn btn-primary">保存</button>
+        </div>
+        <div class="settings-card">
+          <h3>🗑️ データ管理</h3>
+          <button id="clear-data" class="btn btn-danger">すべてのデータを削除</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Recipe Modal -->
+  <div id="recipe-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">レシピを追加</h2>
+        <button id="close-modal" class="close-btn">✕</button>
+      </div>
+      <form id="recipe-form">
+        <div class="form-group">
+          <label>料理名 *</label>
+          <input type="text" id="recipe-name" required class="text-input">
+        </div>
+        <div class="form-group">
+          <label>カテゴリ</label>
+          <select id="recipe-category" class="select-input">
+            <option value="朝食">朝食</option>
+            <option value="昼食">昼食</option>
+            <option value="夕食">夕食</option>
+            <option value="おやつ">おやつ</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>カロリー（kcal）</label>
+          <input type="number" id="recipe-calories" min="0" class="number-input">
+        </div>
+        <div class="form-group">
+          <label>調理時間（分）</label>
+          <input type="number" id="recipe-time" min="0" class="number-input">
+        </div>
+        <div class="form-group">
+          <label>材料（1行に1つ）</label>
+          <textarea id="recipe-ingredients" rows="5" class="textarea-input" placeholder="鶏もも肉 200g&#10;醤油 大さじ2&#10;砂糖 大さじ1"></textarea>
+        </div>
+        <div class="form-group">
+          <label>作り方</label>
+          <textarea id="recipe-steps" rows="5" class="textarea-input" placeholder="1. &#10;2. &#10;3. "></textarea>
+        </div>
+        <div class="form-group">
+          <label>メモ</label>
+          <input type="text" id="recipe-memo" class="text-input">
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">保存</button>
+          <button type="button" id="cancel-modal" class="btn btn-outline">キャンセル</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Meal Picker Modal -->
+  <div id="meal-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="meal-modal-title">料理を選択</h2>
+        <button id="close-meal-modal" class="close-btn">✕</button>
+      </div>
+      <input type="text" id="meal-search" placeholder="🔍 検索..." class="search-input" style="margin-bottom:12px">
+      <div id="meal-recipe-list" class="meal-recipe-list"></div>
+      <div class="modal-footer">
+        <button id="clear-meal" class="btn btn-danger">この日の料理を削除</button>
+        <button id="cancel-meal-modal" class="btn btn-outline">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
