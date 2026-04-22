@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>献立アプリ</title>
+  <title>糖質制限ダイエット献立アプリ</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <nav class="navbar">
-    <div class="nav-brand">🍱 献立アプリ</div>
+    <div class="nav-brand">🥗 糖質制限献立</div>
     <div class="nav-links">
       <a href="#" data-page="calendar" class="nav-link active">カレンダー</a>
       <a href="#" data-page="recipes" class="nav-link">レシピ</a>
@@ -30,9 +30,15 @@
         </div>
       </div>
       <div id="calendar-grid" class="calendar-grid"></div>
-      <div class="calorie-summary">
-        <h3>📊 今週のカロリー合計</h3>
-        <div id="weekly-calories" class="calorie-bars"></div>
+      <div class="summary-panels">
+        <div class="calorie-summary">
+          <h3>🔥 今週のカロリー</h3>
+          <div id="weekly-calories" class="calorie-bars"></div>
+        </div>
+        <div class="carb-summary">
+          <h3>🌾 今週の糖質（g）</h3>
+          <div id="weekly-carbs" class="calorie-bars carb-bars"></div>
+        </div>
       </div>
     </div>
 
@@ -50,6 +56,12 @@
           <option value="昼食">昼食</option>
           <option value="夕食">夕食</option>
           <option value="おやつ">おやつ</option>
+        </select>
+        <select id="carb-filter" class="select-input">
+          <option value="">糖質で絞り込み</option>
+          <option value="low">低糖質（〜10g）</option>
+          <option value="mid">中糖質（10〜30g）</option>
+          <option value="high">高糖質（30g〜）</option>
         </select>
       </div>
       <div id="recipe-list" class="recipe-grid"></div>
@@ -77,6 +89,7 @@
     <div id="page-ai" class="page">
       <div class="page-header">
         <h1>AI献立提案</h1>
+        <span class="badge-diet">糖質制限モード</span>
       </div>
       <div class="ai-container">
         <div class="ai-form">
@@ -85,23 +98,28 @@
             <input type="number" id="ai-people" value="2" min="1" max="10" class="number-input">
           </div>
           <div class="form-group">
-            <label>予算（円/週）</label>
-            <input type="number" id="ai-budget" value="10000" step="1000" class="text-input">
+            <label>1日の目標糖質量（g）</label>
+            <input type="number" id="ai-carbs" value="60" step="10" class="text-input">
+            <small>糖質制限の目安：緩やか130g / 標準60g / 厳格20g</small>
           </div>
           <div class="form-group">
-            <label>好み・制限（例：和食中心、卵アレルギー）</label>
-            <input type="text" id="ai-preferences" placeholder="自由に入力" class="text-input">
+            <label>1日の目標カロリー（kcal）</label>
+            <input type="number" id="ai-calories" value="1600" step="100" class="text-input">
           </div>
           <div class="form-group">
-            <label>目標カロリー（kcal/日）</label>
-            <input type="number" id="ai-calories" value="2000" step="100" class="text-input">
+            <label>週の予算（円）</label>
+            <input type="number" id="ai-budget" value="8000" step="1000" class="text-input">
+          </div>
+          <div class="form-group">
+            <label>その他の制限・好み</label>
+            <input type="text" id="ai-preferences" placeholder="例：卵アレルギー、魚介OK" class="text-input">
           </div>
           <button id="ai-suggest-btn" class="btn btn-primary btn-large">✨ AIに提案してもらう</button>
         </div>
         <div id="ai-result" class="ai-result hidden">
           <div id="ai-loading" class="ai-loading hidden">
             <div class="spinner"></div>
-            <p>AIが献立を考えています...</p>
+            <p>AIが糖質制限献立を考えています...</p>
           </div>
           <div id="ai-content"></div>
           <button id="apply-ai-plan" class="btn btn-success hidden">📅 この献立をカレンダーに追加</button>
@@ -115,6 +133,18 @@
         <h1>設定</h1>
       </div>
       <div class="settings-container">
+        <div class="settings-card">
+          <h3>🎯 ダイエット目標</h3>
+          <div class="form-group">
+            <label>1日の目標糖質量（g）</label>
+            <input type="number" id="goal-carbs" value="60" class="number-input">
+          </div>
+          <div class="form-group">
+            <label>1日の目標カロリー（kcal）</label>
+            <input type="number" id="goal-calories" value="1600" class="number-input">
+          </div>
+          <button id="save-goals" class="btn btn-primary">保存</button>
+        </div>
         <div class="settings-card">
           <h3>🤖 Claude API設定</h3>
           <div class="form-group">
@@ -153,25 +183,31 @@
             <option value="おやつ">おやつ</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>カロリー（kcal）</label>
-          <input type="number" id="recipe-calories" min="0" class="number-input">
-        </div>
-        <div class="form-group">
-          <label>調理時間（分）</label>
-          <input type="number" id="recipe-time" min="0" class="number-input">
+        <div class="form-row">
+          <div class="form-group">
+            <label>🌾 糖質（g）</label>
+            <input type="number" id="recipe-carbs" min="0" step="0.1" class="number-input">
+          </div>
+          <div class="form-group">
+            <label>🔥 カロリー（kcal）</label>
+            <input type="number" id="recipe-calories" min="0" class="number-input">
+          </div>
+          <div class="form-group">
+            <label>⏱ 調理時間（分）</label>
+            <input type="number" id="recipe-time" min="0" class="number-input">
+          </div>
         </div>
         <div class="form-group">
           <label>材料（1行に1つ）</label>
-          <textarea id="recipe-ingredients" rows="5" class="textarea-input" placeholder="鶏もも肉 200g&#10;醤油 大さじ2&#10;砂糖 大さじ1"></textarea>
+          <textarea id="recipe-ingredients" rows="5" class="textarea-input" placeholder="鶏むね肉 200g&#10;ブロッコリー 100g&#10;オリーブオイル 大さじ1"></textarea>
         </div>
         <div class="form-group">
           <label>作り方</label>
-          <textarea id="recipe-steps" rows="5" class="textarea-input" placeholder="1. &#10;2. &#10;3. "></textarea>
+          <textarea id="recipe-steps" rows="4" class="textarea-input" placeholder="1. &#10;2. &#10;3. "></textarea>
         </div>
         <div class="form-group">
           <label>メモ</label>
-          <input type="text" id="recipe-memo" class="text-input">
+          <input type="text" id="recipe-memo" class="text-input" placeholder="糖質を抑えるコツなど">
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">保存</button>
@@ -198,7 +234,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-
   <script src="app.js"></script>
 </body>
 </html>
